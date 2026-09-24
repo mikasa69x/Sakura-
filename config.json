@@ -37,15 +37,15 @@
     "61565898444113"
   ],
   "reactBy": {
-    "delete": ["🗑️", "❌", "😠", "😡", "😾"],
-    "kick": ["😴", "🦵"]
+    "delete": ["😴", "❌", "😠", "😡", "😾"],
+    "kick": ["🍼", "🦵"]
   }, 
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [],
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
-  "nickNameBot": "Your_Bot_Name",
+  "nickNameBot": "─⃝‌‌愛𝐌𝐢𝐤𝐚𝐬𝐚 вαву",
   "prefix": "/",
   "database": {
     "type": "sqlite",
