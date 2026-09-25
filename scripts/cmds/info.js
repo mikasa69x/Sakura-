@@ -113,9 +113,9 @@ async function drawPage1(ctx) {
   ctx.shadowBlur = 12;
 
   const lines = [
-    "Nickname: Saim", "Age: 14+", "DOB: 15 March 2012",
+    "Nickname: sɪʏꫝᴍ ⸙", "Age: 69+", "DOB: 5 March ",
     "Gender: Male", "Religion: Islam", "Nationality: Bangladeshi",
-    "Location: Dhaka,Islampur", "Class: Seven",
+    "Location: Dhaka,Mirpur", "Class: ****",
     `Time: ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Dhaka" })}`
   ];
   let y = 400;
@@ -137,7 +137,7 @@ module.exports = {
     name: "info",
     aliases: ["in4", "ownerinfo"],
     version: "1.0",
-    author: "Saimx69x",
+    author: "—͞Sɪʏꫝᴍㅤ友",
     countDown: 5,
     role: 0,
     shortDescription: "Owner info",
