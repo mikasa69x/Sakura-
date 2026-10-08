@@ -64,21 +64,21 @@ module.exports = {
       await fs.ensureDir(path.dirname(filePath));
       fs.writeFileSync(filePath, Buffer.from(buffer));
 
-      api.setMessageReaction("✅️", event.messageID, () => {}, true);
+      api.setMessageReaction("📜", event.messageID, () => {}, true);
       
       const domain = supportedDomains.find(d => content.includes(d)) || "Unknown Platform";
       const platformName = domain.replace(/(\.com|\.app|\.video|\.net)/, "").toUpperCase();
 
       const infoCard = 
 `━━━━━━━━━━━━━━
-𝐌𝐞𝐝𝐢𝐚 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝 ✅
+𝐌𝐞𝐝𝐢𝐚 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝 
 ╭─╼━━━━━━━━╾─╮
 │ Title      : ${mediaTitle}
 │ Platform   : ${platformName}
 │ Status     : Success
 ╰─━━━━━━━━━╾─╯
 ━━━━━━━━━━━━━━
-Made with ❤️ by Saimx69x.`;
+Made with ❤️ by Sɪʏꫝᴍㅤ友.`;
 
       api.sendMessage(
         { body: infoCard, attachment: fs.createReadStream(filePath) },
