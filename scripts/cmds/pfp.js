@@ -2,7 +2,7 @@ const { GoatWrapper } = require("fca-saim-x69x");
 
 module.exports = {
   config: {
-    name: "profile",
+    name: "pro",
     aliases: ["pp", "pfp"],
     version: "1.0",
     author: "Saimx69x",
