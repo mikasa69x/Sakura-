@@ -1,0 +1,54 @@
+const axios = require("axios");
+
+const mahmud = async () => {
+        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
+        return base.data.mahmud;
+};
+
+module.exports = {
+        config: {
+                name: "hadis",
+                aliases: ["hadith"],
+                version: "1.7",
+                author: "乛 SIYAM ゎ",
+                countDown: 5,
+                role: 0,
+                description: {
+                        en: "Get a random Bangla Hadis with its source"
+                },
+                category: "islam",
+                guide: {
+                        en: '   {pn}: Use to get a random Hadis'
+                }
+        },
+
+        langs: {
+                en: {
+                        wait: "⌛ Baby, fetching a Hadis for you... Please wait! <🖤",
+                        error: "× API error: %1"
+                }
+        },
+
+        onStart: async function ({ api, event, message, getLang }) {
+                try {
+                        api.setMessageReaction("⌛", event.messageID, () => {}, true);
+                        
+                        const baseUrl = await mahmud();
+                        const res = await axios.get(`${baseUrl}/api/hadis`);
+                        
+                        if (!res.data || !res.data.text) throw new Error("Hadis content not found.");
+
+                        const { text, source } = res.data;
+                        const msg = `${text}\n`
+                                  + `• ${source || "Unknown"} 🖤`;
+
+                        api.setMessageReaction("✅", event.messageID, () => {}, true);
+                        return message.reply(msg);
+
+                } catch (err) {
+                        console.error("Hadis Error:", err);
+                        api.setMessageReaction("❌", event.messageID, () => {}, true);
+                        return message.reply(getLang("error", err.message));
+                }
+        }
+};
