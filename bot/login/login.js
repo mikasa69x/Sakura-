@@ -1,5 +1,5 @@
 // set bash title
-process.stdout.write("\x1b]2;Goat Bot V2 - Made by NTKhang, Updated by Saimx69x\x1b\x5c");
+process.stdout.write("\x1b]2;Goat Bot V2 - Made by NTKhang, Updated by sɪʏꫝᴍ ⸙\x1b\x5c");
 const defaultRequire = require;
 
 function decode(text) {
