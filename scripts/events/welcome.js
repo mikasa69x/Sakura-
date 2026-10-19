@@ -6,7 +6,7 @@ module.exports = {
   config: {
     name: "welcome",
     version: "3.6",
-    author: "S1FU (Team Heartless)",
+    author: "—͞Sɪʏꫝᴍㅤ友 (Team Heartless)",
     category: "events",
     description: "Elegant & Clean Welcome Message"
   },
@@ -70,23 +70,21 @@ module.exports = {
         await fs.ensureDir(tmpDir);
         const imagePath = path.join(tmpDir, `welcome_${userId}_${Date.now()}.png`);
 
-        const response = await axios.get(apiUrl, { responseType: "arraybuffer" });
+        const response = await axios.get(apiUrl, {
+          responseType: "arraybuffer"
+        });
         fs.writeFileSync(imagePath, response.data);
 
-        // === Message UI ===
+        // Welcome Message
         const welcomeMsg =
-`🌸  𝐖𝐄𝐋𝐂𝐎𝐌𝐄  🌸
+`╭─── 🌸 ───╮
+  𝐖𝐄𝐋𝐂𝐎𝐌𝐄
+╰─── 🌸 ───╯
 
-👋 Hello ${fullName}!
-
-💫 You have joined our beautiful family
-
-🎉 You are now the ${memberCount}th precious member of
-
-『 ${groupName} 』
-
-✨ Hope you enjoy your stay here!
-Let’s create lots of beautiful memories together 💖`;
+🦋 ${fullName}
+💫 Welcome to 『 ${groupName} 』
+💌 Member #${memberCount}
+🪶 Stay happy & enjoy!`;
 
         await api.sendMessage({
           body: welcomeMsg,
