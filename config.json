@@ -31,7 +31,7 @@
   ],
 
   "premiumUsers": [
-    "100082468744580"
+    "100065590940242"
   ],
 
   "whiteListMode": {
@@ -48,7 +48,7 @@
 
   "database": {
     "type": "mongodb",
-    "uriMongodb": "mongodb+srv://bot:bot@bot.gdqpcyu.mongodb.net/?appName=bot",
+    "uriMongodb": "mongodb+srv://saan:637376383@cluster0.kdcq3vl.mongodb.net/bot18?appName=Cluster0",
     "autoSyncWhenStart": false,
     "autoRefreshThreadInfoFirstTime": true
   },
