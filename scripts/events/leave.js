@@ -1,23 +1,15 @@
 const { getTime, drive } = global.utils;
+const axios = require("axios");
 
 module.exports = {
 	config: {
 		name: "leave",
-		version: "1.4",
-		author: "NTKhang",
+		version: "1.8",
+		author: "NTKhang|| modified by xiyam",
 		category: "events"
 	},
 
 	langs: {
-		vi: {
-			session1: "sáng",
-			session2: "trưa",
-			session3: "chiều",
-			session4: "tối",
-			leaveType1: "tự rời",
-			leaveType2: "bị kick",
-			defaultLeaveMessage: "{userName} đã {type} khỏi nhóm"
-		},
 		en: {
 			session1: "morning",
 			session2: "noon",
@@ -39,29 +31,25 @@ module.exports = {
 				const { leftParticipantFbId } = event.logMessageData;
 				if (leftParticipantFbId == api.getCurrentUserID())
 					return;
+				
 				const hours = getTime("HH");
-
-				const threadName = threadData.threadName;
+				const threadName = threadData.threadName || "group";
 				const userName = await usersData.getName(leftParticipantFbId);
-
-				// {userName}   : name of the user who left the group
-				// {type}       : type of the message (leave)
-				// {boxName}    : name of the box
-				// {threadName} : name of the box
-				// {time}       : time
-				// {session}    : session
+				const isKicked = leftParticipantFbId != event.author;
 
 				let { leaveMessage = getLang("defaultLeaveMessage") } = threadData.data;
+				
 				const form = {
-					mentions: leaveMessage.match(/\{userNameTag\}/g) ? [{
+					body: "",
+					mentions: leaveMessage.includes("{userNameTag}") ? [{
 						tag: userName,
 						id: leftParticipantFbId
-					}] : null
+					}] : []
 				};
 
 				leaveMessage = leaveMessage
 					.replace(/\{userName\}|\{userNameTag\}/g, userName)
-					.replace(/\{type\}/g, leftParticipantFbId == event.author ? getLang("leaveType1") : getLang("leaveType2"))
+					.replace(/\{type\}/g, isKicked ? getLang("leaveType2") : getLang("leaveType1"))
 					.replace(/\{threadName\}|\{boxName\}/g, threadName)
 					.replace(/\{time\}/g, hours)
 					.replace(/\{session\}/g, hours <= 10 ?
@@ -75,23 +63,27 @@ module.exports = {
 
 				form.body = leaveMessage;
 
-				if (leaveMessage.includes("{userNameTag}")) {
-					form.mentions = [{
-						id: leftParticipantFbId,
-						tag: userName
-					}];
-				}
-
-				if (threadData.data.leaveAttachment) {
+				if (isKicked) {
+					try {
+						const gifRes = await axios.get("https://i.imgur.com/SFQoVw7.gif", {
+							responseType: "stream",
+							headers: {
+								'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+								'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+							}
+						});
+						form.attachment = gifRes.data;
+					} catch (e) {
+						// Error logic removed to keep console clean
+					}
+				} else if (threadData.data.leaveAttachment) {
 					const files = threadData.data.leaveAttachment;
-					const attachments = files.reduce((acc, file) => {
-						acc.push(drive.getFile(file, "stream"));
-						return acc;
-					}, []);
+					const attachments = files.map(file => drive.getFile(file, "stream"));
 					form.attachment = (await Promise.allSettled(attachments))
 						.filter(({ status }) => status == "fulfilled")
 						.map(({ value }) => value);
 				}
+
 				message.send(form);
 			};
 	}
