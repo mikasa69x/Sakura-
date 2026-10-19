@@ -29,7 +29,6 @@ module.exports = {
         const userId = user.userFbId;
         const fullName = user.fullName.toUpperCase();
 
-    
         let addedByName = "Someone";
         const possibleIDs = [logMessageData.author, senderID].filter(Boolean);
 
@@ -65,8 +64,7 @@ module.exports = {
           `&text1=${encodeURIComponent(stylishName)}` +
           `&text2=${encodeURIComponent(stylishText2)}` +
           `&text3=${encodeURIComponent(stylishText3)}` +
-          `&groupname=${encodeURIComponent(groupName)}` +
-          `&addedby=${encodeURIComponent(addedByName)}`;
+          `&groupname=${encodeURIComponent(groupName)}`;
 
         const tmpDir = path.join(__dirname, "cache");
         await fs.ensureDir(tmpDir);
@@ -76,7 +74,7 @@ module.exports = {
         fs.writeFileSync(imagePath, response.data);
 
         // === Message UI ===
-        const welcomeMsg = 
+        const welcomeMsg =
 `🌸  𝐖𝐄𝐋𝐂𝐎𝐌𝐄  🌸
 
 👋 Hello ${fullName}!
@@ -86,8 +84,6 @@ module.exports = {
 🎉 You are now the ${memberCount}th precious member of
 
 『 ${groupName} 』
-
-👤 Added by: ${addedByName}
 
 ✨ Hope you enjoy your stay here!
 Let’s create lots of beautiful memories together 💖`;
