@@ -77,9 +77,7 @@ module.exports = {
 
         // Welcome Message
         const welcomeMsg =
-`╭─── 🌸 ───╮
-  𝐖𝐄𝐋𝐂𝐎𝐌𝐄
-╰─── 🌸 ───╯
+` 𝐖𝐄𝐋𝐂𝐎𝐌𝐄
 
 🦋 ${fullName}
 💫 Welcome to 『 ${groupName} 』
