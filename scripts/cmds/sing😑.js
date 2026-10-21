@@ -39,8 +39,8 @@ async function downloadSong(baseApi, url, api, event, title = null) {
 
 module.exports = {
   config: {
-    name: "song3",
-    aliases: ["musik"],
+    name: "sing",
+    aliases: ["audio"],
     version: "0.0.1",
     author: "乛 SIYAM ゎ",
     countDown: 5,
