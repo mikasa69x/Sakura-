@@ -32,7 +32,7 @@ module.exports = {
     const { threadID, messageID } = event;
 
     const prefix   = global.GoatBot?.config?.prefix || ".";
-    const botName  = "✨愛𝐌𝐢𝐤𝐚𝐬𝐚 вαву💌🎀";
+    const botName  = "愛𝐌𝐢𝐤𝐚𝐬𝐚 вαву🎀";
     const heartLine = "✦━━━━━━━━━━━━✦";
 
     let actionCount = 0;
