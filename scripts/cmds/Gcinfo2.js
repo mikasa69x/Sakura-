@@ -4,8 +4,8 @@ const path = require("path");
 
 module.exports = {
   config: {
-    name: "groupinfo",
-    aliases: ["boxinfo"],
+    name: "groupinfo2",
+    aliases: ["boxinfo2"],
     version: "1.0",
     author: "—͞Sɪʏꫝᴍㅤ友",
     countDown: 5,
