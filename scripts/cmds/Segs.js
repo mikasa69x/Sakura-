@@ -6,7 +6,7 @@ let botMessages = {};
 
 module.exports = {
   config: {
-    name: "segs2",
+    name: "segs",
     version: "1.5",
     author: "—͞Sɪʏꫝᴍㅤ友",
     role: 2,
