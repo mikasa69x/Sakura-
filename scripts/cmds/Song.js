@@ -1,108 +1,179 @@
-const { getStreamFromURL } = global.utils;
+const axios = require("axios");
+const yts = require("yt-search");
+const fs = require("fs");
+const path = require("path");
 
-module.exports = {
-	config: {
-		name: "song",
-		aliases: ["soong", "music"],
-		version: "1.0",
-		author: "Neoaz 🐊",
-		countDown: 5,
-		role: 0,
-		description: {
-			en: "Search a song and send it"
-		},
-		category: "media",
-		guide: {
-			en: "   {pn} <song name>: search and send the first matching song"
-				+ "\n   {pn} <song name> -c <number>: return that many results, reply with a number to pick one"
+const CACHE_DIR = path.join(__dirname, "cache");
+const SONG_API_BASE = "https://eryxenx.agi.bd/api/song";
+
+async function fetchSongInfo(videoUrl) {
+	const infoRes = await axios.get(SONG_API_BASE, {
+		params: { url: videoUrl },
+		timeout: 60000
+	});
+
+	const data = infoRes.data;
+	if (!data?.success || !data?.downloadUrl) {
+		throw new Error(data?.error || "downloadUrl paoa jayni API response e");
+	}
+	return data;
+}
+
+async function streamDownloadToFile(dlUrl, filePath) {
+	if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+
+	const response = await axios.get(dlUrl, {
+		responseType: "stream",
+		timeout: 300000,
+		maxContentLength: Infinity,
+		maxBodyLength: Infinity,
+		headers: {
+			"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1"
 		}
-	},
+	});
 
-	onStart: async function ({ message, event, args, api }) {
-		await react(api, event, "⏳");
+	const contentType = response.headers["content-type"] || "";
+	const isValid = contentType.includes("video") || contentType.includes("audio") || contentType.includes("octet-stream");
+
+	if (!isValid) {
+		let bodyText = "";
 		try {
-			const { query, count } = parseArgs(args);
-			if (!query)
-				throw new Error("no query");
-
-			const { tracks } = await api.searchMusic(query, { limit: count });
-			if (!tracks.length) {
-				await react(api, event, "❌");
-				return;
+			const chunks = [];
+			for await (const chunk of response.data) {
+				chunks.push(chunk);
+				if (Buffer.concat(chunks).length > 2000) break;
 			}
+			bodyText = Buffer.concat(chunks).toString("utf-8").slice(0, 500);
+		} catch (_) {}
 
-			const list = tracks.map((t, i) => `${i + 1}. ${t.title} — ${t.artist} (${formatDuration(t.durationMs)})`).join("\n");
-			const thumbnails = await Promise.all(tracks.filter(t => t.image).map(t => getStreamFromURL(t.image)));
+		throw new Error(
+			`Invalid content received from downloadUrl (type: ${contentType})` +
+			(bodyText ? ` — upstream said: "${bodyText.trim()}"` : "")
+		);
+	}
 
-			const sent = await message.reply({
-				body: list,
-				attachment: thumbnails
-			});
-			global.GoatBot.onReply.set(sent.messageID, {
-				commandName: this.config.name,
-				messageID: sent.messageID,
-				author: event.senderID,
-				result: tracks
-			});
-			await react(api, event, "🪶");
-		}
-		catch (e) {
-			await react(api, event, "❌");
-		}
-	},
+	const writer = fs.createWriteStream(filePath);
 
-	onReply: async function ({ message, event, api, Reply }) {
-		const choice = parseInt(event.body);
-		if (isNaN(choice) || choice < 1 || choice > Reply.result.length) {
-			api.unsendMessage(Reply.messageID);
-			return;
-		}
-		await react(api, event, "⏳");
+	await new Promise((resolve, reject) => {
+		response.data.pipe(writer);
+		let failed = false;
+		const onError = (err) => {
+			if (failed) return;
+			failed = true;
+			writer.close();
+			fs.unlink(filePath, () => {});
+			reject(err);
+		};
+		response.data.on("error", onError);
+		writer.on("error", onError);
+		writer.on("close", () => { if (!failed) resolve(); });
+	});
+
+	const stats = fs.statSync(filePath);
+	if (stats.size < 1024) {
+		fs.unlink(filePath, () => {});
+		throw new Error(`Downloaded file too small (${stats.size} bytes) — corrupt ba failed download`);
+	}
+}
+
+function extractApiErrorMessage(err) {
+	const raw = err.response?.data;
+
+	if (raw && typeof raw === "object" && !Buffer.isBuffer(raw)) {
+		if (raw.error) return raw.error;
+		if (raw.message) return raw.message;
+	}
+
+	if (raw) {
 		try {
-			const track = Reply.result[choice - 1];
-			api.unsendMessage(Reply.messageID);
-			await message.reply({
-				body: `${track.title} — ${track.artist}`,
-				attachment: await getStreamFromURL(track.previewUrl, `${track.id}.m4a`)
-			});
-			await react(api, event, "🪶");
+			const text = Buffer.isBuffer(raw) ? raw.toString("utf-8") : String(raw);
+			const parsed = JSON.parse(text);
+			if (parsed?.error) return parsed.error;
+			if (parsed?.message) return parsed.message;
+		} catch (_) {}
+	}
+
+	return err.message;
+}
+
+function tempFilePath(ext) {
+	if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+	return path.join(CACHE_DIR, `sing_${Date.now()}_${Math.floor(Math.random() * 1e4)}.${ext}`);
+}
+
+async function sendWithRetry(message, msg, retries = 2) {
+	for (let i = 0; i <= retries; i++) {
+		try {
+			return await message.reply(msg);
+		} catch (err) {
+			const is408 = err?.error === 408 || String(err?.message || err).includes("408");
+			if (is408 && i < retries) {
+				console.warn(`[sing] Upload timeout, retrying (${i + 1}/${retries})...`);
+				await new Promise(r => setTimeout(r, 2000));
+				continue;
+			}
+			throw err;
 		}
-		catch (e) {
-			await react(api, event, "❌");
-		}
+	}
+}
+
+function react(api, messageID, emoji) {
+	try {
+		api.setMessageReaction(emoji, messageID, () => {}, true);
+	} catch (_) {}
+}
+
+module.exports.config = {
+	name: "soong",
+	aliases: ["song"],
+	version: "2.0.0",
+	author: "EryXenX",
+	countDown: 5,
+	role: 0,
+	shortDescription: "YouTube theke gaan download",
+	longDescription: "Song name diye sorasori mp3 download kore pathay",
+	category: "media",
+	guide: {
+		en: "{pn} <song name>\nExample: {pn} mann mera"
 	}
 };
 
-function parseArgs(args) {
-	let count = 6;
-	const words = [];
-	for (let i = 0; i < args.length; i++) {
-		const arg = args[i];
-		if (arg === "-c" || arg === "--count") {
-			const value = parseInt(args[i + 1]);
-			if (value > 0) count = Math.min(value, 20);
-			i++;
-		}
-		else if (/^-c\d+$/.test(arg)) {
-			const value = parseInt(arg.slice(2));
-			if (value > 0) count = Math.min(value, 20);
-		}
-		else
-			words.push(arg);
+module.exports.onStart = async function ({ api, event, args, message }) {
+	const { messageID } = event;
+	const query = args.join(" ").trim();
+
+	if (!query) {
+		return message.reply("❌ Song name den.\nExample: sing mann mera");
 	}
-	return { query: words.join(" ").trim(), count };
-}
 
-function formatDuration(ms) {
-	const total = Math.round((ms || 0) / 1000);
-	const minutes = Math.floor(total / 60);
-	const seconds = String(total % 60).padStart(2, "0");
-	return `${minutes}:${seconds}`;
-}
+	react(api, messageID, "⏳");
 
-async function react(api, event, emoji) {
+	let file;
 	try {
-		await api.setMessageReaction(emoji, event.messageID, event.threadID);
+		const search = await yts(query);
+		const video = search.videos?.[0];
+		if (!video) {
+			react(api, messageID, "❌");
+			return message.reply(`❌ "${query}" er kono result paoa jayni`);
+		}
+
+		const info = await fetchSongInfo(video.url);
+		file = tempFilePath("mp3");
+		await streamDownloadToFile(info.downloadUrl, file);
+
+		await sendWithRetry(message, {
+			body: `🎶 ${info.title || video.title}\n🕒 ${video.timestamp}`,
+			attachment: fs.createReadStream(file)
+		});
+
+		react(api, messageID, "✅");
+	} catch (err) {
+		console.error(err);
+		react(api, messageID, "❌");
+		return message.reply("❌ Download failed: " + extractApiErrorMessage(err));
+	} finally {
+		if (file) {
+			try { fs.unlinkSync(file); } catch (e) { console.error("[sing] cleanup error:", e.message); }
+		}
 	}
-	catch (e) { }
-}
+};
